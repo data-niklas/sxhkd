@@ -31,6 +31,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "sxhkd.h"
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 void warn(char *fmt, ...)
 {
@@ -52,7 +54,43 @@ void err(char *fmt, ...)
 
 void run(char *command, bool sync)
 {
-	char *cmd[] = {shell, "-c", command, NULL};
+	Display *display = XOpenDisplay(NULL);
+    Window focus;
+    XTextProperty text;
+    int revert;
+	XGetInputFocus(display, &focus, &revert);
+	XGetWMName(display, focus, &text);
+	XCloseDisplay(display);
+
+	char *translated_command;
+	
+	int len = strlen(command);
+	if (len > 2 && *command == '-'){
+		int pos = 0;
+		int name_length = -1;
+		while (++pos < len){
+			if (*(command + 1 + pos) == '-'){
+				name_length = pos-1;
+				break;
+			}
+		}
+		if (name_length > -1){
+			char buffer[name_length + 1];
+			memcpy(buffer, command + 1, 1 + name_length);
+			translated_command=(command+3+name_length);
+			if (text.value != 0x0 && strstr((char*)text.value, buffer) == NULL){
+				return;
+			}
+		}
+		else{
+			translated_command = command;
+		}
+	}
+	else{
+		translated_command = command;
+	}
+
+	char *cmd[] = {shell, "-c", translated_command, NULL};
 	spawn(cmd, sync);
 }
 
