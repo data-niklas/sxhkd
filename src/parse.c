@@ -2378,22 +2378,26 @@ void load_config(const char *config_file)
 	int offset = 0;
 	char first;
 
+	//Reads a line into buf
 	while (fgets(buf, sizeof(buf), cfg) != NULL) {
 		first = buf[0];
 		if (strlen(buf) < 2 || first == START_COMMENT) {
 			continue;
 		} else {
+			//Ignoring empty lines
 			char *start = lgraph(buf);
 			if (start == NULL)
 				continue;
 			char *end = rgraph(buf);
 			*(end + 1) = '\0';
 
+			//Appending Partial lines (offset) or setting the command / chain
 			if (isgraph(first))
 				snprintf(chain + offset, sizeof(chain) - offset, "%s", start);
 			else
 				snprintf(command + offset, sizeof(command) - offset, "%s", start);
 
+			//Detecting Partial lines
 			if (*end == PARTIAL_LINE) {
 				offset += end - start;
 				continue;
@@ -2445,6 +2449,7 @@ void process_hotkey(char *hotkey_string, char *command_string)
 	char command[2 * MAXLEN] = {0};
 	char last_hotkey[2 * MAXLEN] = {0};
 	unsigned char num_same = 0;
+	//Neede because of the {} notation thing
 	chunk_t *hk_chunks = extract_chunks(hotkey_string);
 	chunk_t *cm_chunks = extract_chunks(command_string);
 

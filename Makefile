@@ -3,9 +3,9 @@ VERCMD  ?= git describe --tags 2> /dev/null
 VERSION := $(shell $(VERCMD) || cat VERSION)
 
 CPPFLAGS += -D_POSIX_C_SOURCE=200112L -DVERSION=\"$(VERSION)\"
-CFLAGS   += -std=c99 -pedantic -Wall -Wextra
+CFLAGS   += -std=c99 -pedantic -Wall -Wextra -fcommon
 LDFLAGS  ?=
-LDLIBS    = $(LDFLAGS) -lxcb -lxcb-keysyms
+LDLIBS    = $(LDFLAGS) -lxcb -lxcb-keysyms -lX11
 
 PREFIX    ?= /usr/local
 BINPREFIX ?= $(PREFIX)/bin
