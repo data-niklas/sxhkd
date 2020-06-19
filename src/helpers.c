@@ -31,8 +31,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "sxhkd.h"
-#include <X11/Xlib.h>
-#include <X11/Xmu/WinUtil.h>
 
 void warn(char *fmt, ...)
 {
@@ -127,7 +125,6 @@ XClassHint* get_window_class(Display* d, Window w){
 
 void run(char *command, bool sync)
 {
-	Display* d = XOpenDisplay(NULL);
 	Window w = get_focus_window(d);
 	w = get_top_window(d, w);
 	w = get_named_window(d, w);
@@ -141,7 +138,6 @@ void run(char *command, bool sync)
     setenv("SXHKD_WM_CLASS_NAME", "", 1);
     setenv("SXHKD_WM_CLASS", "", 1);
   }
-	XCloseDisplay(d);
     char *cmd[] = {shell, "-c", command, NULL};
     spawn(cmd, sync);
 }
