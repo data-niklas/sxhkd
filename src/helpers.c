@@ -31,8 +31,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "sxhkd.h"
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+#include <xcb/xcb.h>
 
 void warn(char *fmt, ...)
 {
@@ -52,25 +51,102 @@ void err(char *fmt, ...)
 	exit(EXIT_FAILURE);
 }
 
+/*
+xcb_window_t get_active_window(){
+	xcb_get_input_focus_cookie_t cookie;
+	xcb_get_input_focus_reply_t *reply;
+
+	cookie = xcb_get_input_focus(dpy);
+	if ((reply = xcb_get_input_focus_reply(dpy, cookie, NULL))){
+		xcb_window_t window = reply->focus;
+		free(reply);
+		return window;
+	}
+	else{
+		free(reply);
+		return NULL;
+	}
+}
+*/
+
+xcb_window_t get_active_window(){
+	xcb_intern_atom_cookie_t atom_cookie = xcb_intern_atom(dpy, 0, strlen("_NET_ACTIVE_WINDOW"), "_NET_ACTIVE_WINDOW");
+	xcb_intern_atom_reply_t *atom_reply = xcb_intern_atom_reply(dpy, atom_cookie, NULL);
+	
+	if (!atom_reply){
+		free(atom_reply);
+		return NULL;
+	}
+	xcb_atom_t atom = atom_reply->atom;
+	free(atom_reply);
+
+	xcb_window_t root = xcb_setup_roots_iterator(xcb_get_setup(dpy)).data->root;
+	xcb_get_property_reply_t *reply = get_window_property(root, atom, XCB_ATOM_CARDINAL);
+	if (!reply){
+		free(reply);
+		return NULL;
+	}
+	xcb_window_t window = *(uint32_t*)xcb_get_property_value(reply);
+	free(reply);
+	return window;
+}
+
+
+
+xcb_get_property_reply_t *get_window_property(xcb_window_t window, xcb_atom_t property, xcb_atom_enum_t type){
+	xcb_get_property_cookie_t cookie;
+	//Only works with strings
+	
+	cookie = xcb_get_property(dpy, 0, window, property, type, 0, 0);
+	return xcb_get_property_reply(dpy, cookie, NULL);
+}
+
+xcb_window_t getActiveWindow()
+{
+    xcb_get_input_focus_reply_t* focusReply;
+    xcb_query_tree_cookie_t treeCookie;
+    xcb_query_tree_reply_t* treeReply;
+
+    focusReply = xcb_get_input_focus_reply(dpy, xcb_get_input_focus(dpy), NULL);
+    xcb_window_t window = focusReply->focus;
+    while (1) {
+        treeCookie = xcb_query_tree(dpy, window);
+        treeReply = xcb_query_tree_reply(dpy, treeCookie, NULL);
+        if (!treeReply) {
+            window = 0;
+            break;
+        }
+        if (window == treeReply->root || treeReply->parent == treeReply->root) {
+            break;
+        } else {
+            window = treeReply->parent;
+        }
+        free(treeReply);
+    }
+    free(treeReply);
+    return window;
+}
+
 void run(char *command, bool sync)
 {
-    Display *display = XOpenDisplay(NULL);
-    Window focus;
-    int revert;
-    XClassHint *class_hint = XAllocClassHint();
 
-    XGetInputFocus(display, &focus, &revert);
-    if(class_hint) {
-	if(XGetClassHint(display, focus, class_hint)) {
-	    setenv("SXHKD_WM_CLASS", class_hint->res_class, 1);
-	    setenv("SXHKD_WM_NAME", class_hint->res_name, 1);
-	    XFree(class_hint->res_class);
-	    XFree(class_hint->res_name);
+	xcb_window_t window = get_active_window();
+	xcb_get_property_reply_t *name_reply = get_window_property(window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING);
+
+	if (name_reply) {
+		int len = xcb_get_property_value_length(name_reply);
+		if (len == 0) {
+			printf("TODO\n");
+			free(name_reply);
+			return;
+		}
+		printf("WM_NAME is %.*s\n", len,
+				(char*)xcb_get_property_value(name_reply));
 	}
-
-	XFree(class_hint);
-    }
-    XCloseDisplay(display);
+	else{
+		printf("No Property reply\n");
+	}
+	free(name_reply);
 
     char *cmd[] = {shell, "-c", command, NULL};
     spawn(cmd, sync);

@@ -4,6 +4,18 @@
         "stdbool.h": "c",
         "random": "c",
         "locales.h": "c",
-        "vector": "c"
+        "vector": "c",
+        "array": "c",
+        "chrono": "c",
+        "compare": "c",
+        "functional": "c",
+        "istream": "c",
+        "ostream": "c",
+        "ranges": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "variant": "c"
     }
 }

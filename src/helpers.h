@@ -39,6 +39,9 @@
 void warn(char *fmt, ...);
 __attribute__((noreturn))
 void err(char *fmt, ...);
+xcb_window_t get_active_window();
+xcb_window_t getActiveWindow();
+xcb_get_property_reply_t *get_window_property(xcb_window_t window, xcb_atom_t property, xcb_atom_enum_t type);
 void execute(char *cmd[]);
 void spawn(char *cmd[], bool sync);
 void run(char *command, bool sync);
