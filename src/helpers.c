@@ -133,17 +133,32 @@ XClassHint *get_window_class(Display *d, Window w)
 	return NULL;
 }
 
-void get_window_bounds(Display *d, Window w, int *x, int *y, int *width, int *height)
+void get_window_bounds(Display *d, Window w, int *x, int *y, unsigned int *width, unsigned int *height)
 {
-	int *depth, *border;
-	Window *dummy;
-	if (XGetGeometry(d, w, dummy, x, y, width, height, border, depth) == BadWindow)
+	unsigned int depth;
+	unsigned int border;
+	Window dummy;
+	if (XGetGeometry(d, w, &dummy, x, y, width, height, &border, &depth) == BadWindow)
 	{
 		*x = 0;
 		*y = 0;
 		*width = 0;
 		*height = 0;
 	}
+}
+
+char* itoa(int val){
+	
+	static char buf[32] = {0};
+	
+	int i = 30;
+	
+	for(; val && i ; --i, val /= 10)
+	
+		buf[i] = "0123456789"[val % 10];
+	
+	return &buf[i+1];
+	
 }
 
 void run(char *command, bool sync)
@@ -161,8 +176,10 @@ void run(char *command, bool sync)
 		setenv("SXHKD_CLASS_NAME", "", 1);
 		setenv("SXHKD_CLASS", "", 1);
 	}
-	int x, y, width, height;
+	int x, y;
+	unsigned int width, height;
 	get_window_bounds(d, w, &x, &y, &width, &height);
+	//And then set them as env variables
 	setenv("SXHKD_X", itoa(x), 1);
 	setenv("SXHKD_Y", itoa(y), 1);
 	setenv("SXHKD_WIDTH", itoa(width), 1);

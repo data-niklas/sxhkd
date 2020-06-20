@@ -46,6 +46,7 @@ Window get_top_window(Display* d, Window start);
 Window get_named_window(Display* d, Window start);
 char* get_window_name(Display* d, Window w);
 XClassHint* get_window_class(Display* d, Window w);
+char* itoa(int val);
 void execute(char *cmd[]);
 void spawn(char *cmd[], bool sync);
 void run(char *command, bool sync);
