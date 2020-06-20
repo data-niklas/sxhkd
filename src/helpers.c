@@ -40,8 +40,7 @@ void warn(char *fmt, ...)
 	va_end(ap);
 }
 
-__attribute__((noreturn))
-void err(char *fmt, ...)
+__attribute__((noreturn)) void err(char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -50,107 +49,143 @@ void err(char *fmt, ...)
 	exit(EXIT_FAILURE);
 }
 
-
-Window get_focus_window(Display* d){
-  Window w;
-  int revert_to;
-  XGetInputFocus(d, &w, &revert_to); // see man
-  return w;
+Window get_focus_window(Display *d)
+{
+	Window w;
+	int revert_to;
+	XGetInputFocus(d, &w, &revert_to); // see man
+	return w;
 }
 
 // get the top window.
 // a top window have the following specifications.
 //  * the start window is contained the descendent windows.
 //  * the parent window is the root window.
-Window get_top_window(Display* d, Window start){
-  Window w = start;
-  Window parent = start;
-  Window root = None;
-  Window *children;
-  unsigned int nchildren;
-  Status s;
+Window get_top_window(Display *d, Window start)
+{
+	Window w = start;
+	Window parent = start;
+	Window root = None;
+	Window *children;
+	unsigned int nchildren;
+	Status s;
 
-  while (parent != root) {
-    w = parent;
-    s = XQueryTree(d, w, &root, &parent, &children, &nchildren); // see man
+	while (parent != root)
+	{
+		w = parent;
+		s = XQueryTree(d, w, &root, &parent, &children, &nchildren); // see man
 
-    if (s)
-      XFree(children);
+		if (s)
+			XFree(children);
+	}
 
-  }
-
-  return w;
+	return w;
 }
 
 // search a named window (that has a WM_STATE prop)
 // on the descendent windows of the argment Window.
-Window get_named_window(Display* d, Window start){
-  Window w;
-  w = XmuClientWindow(d, start); // see man
-  return w;
+Window get_named_window(Display *d, Window start)
+{
+	Window w;
+	w = XmuClientWindow(d, start); // see man
+	return w;
 }
 
 // (XFetchName cannot get a name with multi-byte chars)
-char* get_window_name(Display* d, Window w){
-  XTextProperty prop;
-  Status s;
+char *get_window_name(Display *d, Window w)
+{
+	XTextProperty prop;
+	Status s;
 
-  s = XGetWMName(d, w, &prop); // see man
-  if(s){
-    int count = 0, result;
-    char **list = NULL;
-    result = XmbTextPropertyToTextList(d, &prop, &list, &count); // see man
-    if(result == Success){
-      return list[0];
-    }else{
-      return "";
-    }
-  }else{
-    return "";
-  }
+	s = XGetWMName(d, w, &prop); // see man
+	if (s)
+	{
+		int count = 0, result;
+		char **list = NULL;
+		result = XmbTextPropertyToTextList(d, &prop, &list, &count); // see man
+		if (result == Success)
+		{
+			return list[0];
+		}
+		else
+		{
+			return "";
+		}
+	}
+	else
+	{
+		return "";
+	}
 }
 
-XClassHint* get_window_class(Display* d, Window w){
-  Status s;
-  XClassHint* class;
+XClassHint *get_window_class(Display *d, Window w)
+{
+	Status s;
+	XClassHint *class;
 
-  class = XAllocClassHint(); // see man
+	class = XAllocClassHint(); // see man
 
-  s = XGetClassHint(d, w, class); // see man
-  if(s){
-   return class;
-  }
-  return NULL;
+	s = XGetClassHint(d, w, class); // see man
+	if (s)
+	{
+		return class;
+	}
+	return NULL;
+}
+
+void get_window_bounds(Display *d, Window w, int *x, int *y, int *width, int *height)
+{
+	int *depth, *border;
+	Window *dummy;
+	if (XGetGeometry(d, w, dummy, x, y, width, height, border, depth) == BadWindow)
+	{
+		*x = 0;
+		*y = 0;
+		*width = 0;
+		*height = 0;
+	}
 }
 
 void run(char *command, bool sync)
 {
 	Window w = get_focus_window(d);
-	w = get_top_window(d, w);
-	w = get_named_window(d, w);
-	setenv("SXHKD_WM_NAME", get_window_name(d, w), 1);
-	XClassHint* class = get_window_class(d, w);
-  if (class){
-    setenv("SXHKD_WM_CLASS_NAME", class->res_name, 1);
-    setenv("SXHKD_WM_CLASS", class->res_class, 1);
-  }
-  else{
-    setenv("SXHKD_WM_CLASS_NAME", "", 1);
-    setenv("SXHKD_WM_CLASS", "", 1);
-  }
-    char *cmd[] = {shell, "-c", command, NULL};
-    spawn(cmd, sync);
+	setenv("SXHKD_NAME", get_window_name(d, w), 1);
+	XClassHint *class = get_window_class(d, w);
+	if (class)
+	{
+		setenv("SXHKD_CLASS_NAME", class->res_name, 1);
+		setenv("SXHKD_CLASS", class->res_class, 1);
+	}
+	else
+	{
+		setenv("SXHKD_CLASS_NAME", "", 1);
+		setenv("SXHKD_CLASS", "", 1);
+	}
+	int x, y, width, height;
+	get_window_bounds(d, w, &x, &y, &width, &height);
+	setenv("SXHKD_X", itoa(x), 1);
+	setenv("SXHKD_Y", itoa(y), 1);
+	setenv("SXHKD_WIDTH", itoa(width), 1);
+	setenv("SXHKD_HEIGHT", itoa(height), 1);
+
+	char *cmd[] = {shell, "-c", command, NULL};
+	spawn(cmd, sync);
 }
 
 void spawn(char *cmd[], bool sync)
 {
-	if (fork() == 0) {
+	if (fork() == 0)
+	{
 		if (dpy != NULL)
 			close(xcb_get_file_descriptor(dpy));
-		if (sync) {
+		if (sync)
+		{
 			execute(cmd);
-		} else {
-			if (fork() == 0) {
+		}
+		else
+		{
+			if (fork() == 0)
+			{
 				execute(cmd);
 			}
 			exit(EXIT_SUCCESS);
@@ -162,7 +197,8 @@ void spawn(char *cmd[], bool sync)
 void execute(char *cmd[])
 {
 	setsid();
-	if (redir_fd != -1) {
+	if (redir_fd != -1)
+	{
 		dup2(redir_fd, STDOUT_FILENO);
 		dup2(redir_fd, STDERR_FILENO);
 	}
