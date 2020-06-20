@@ -169,8 +169,11 @@ char* itoa(int val){
 void run(char *command, bool sync)
 {
 	Window w = get_focus_window(d);
-	w = get_top_window(d, w);
-	w = get_named_window(d, w);
+	if (w != XDefaultRootWindow(d)){
+        	w = get_top_window(d, w);
+    	}
+       	w = get_named_window(d, w);
+
 	setenv("SXHKD_WIN_NAME", get_window_name(d, w), 1);
 	XClassHint *class = get_window_class(d, w);
 	if (class)
