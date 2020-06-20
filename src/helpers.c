@@ -171,26 +171,26 @@ void run(char *command, bool sync)
 	Window w = get_focus_window(d);
 	w = get_top_window(d, w);
 	w = get_named_window(d, w);
-	setenv("SXHKD_NAME", get_window_name(d, w), 1);
+	setenv("SXHKD_WIN_NAME", get_window_name(d, w), 1);
 	XClassHint *class = get_window_class(d, w);
 	if (class)
 	{
-		setenv("SXHKD_CLASS_NAME", class->res_name, 1);
-		setenv("SXHKD_CLASS", class->res_class, 1);
+		setenv("SXHKD_WIN_CLASS_NAME", class->res_name, 1);
+		setenv("SXHKD_WIN_CLASS", class->res_class, 1);
 	}
 	else
 	{
-		setenv("SXHKD_CLASS_NAME", "", 1);
-		setenv("SXHKD_CLASS", "", 1);
+		setenv("SXHKD_WIN_CLASS_NAME", "", 1);
+		setenv("SXHKD_WIN_CLASS", "", 1);
 	}
 	int x, y;
 	unsigned int width, height;
 	get_window_bounds(d, w, &x, &y, &width, &height);
 	//And then set them as env variables
-	setenv("SXHKD_X", itoa(x), 1);
-	setenv("SXHKD_Y", itoa(y), 1);
-	setenv("SXHKD_WIDTH", itoa(width), 1);
-	setenv("SXHKD_HEIGHT", itoa(height), 1);
+	setenv("SXHKD_WIN_X", itoa(x), 1);
+	setenv("SXHKD_WIN_Y", itoa(y), 1);
+	setenv("SXHKD_WIN_WIDTH", itoa(width), 1);
+	setenv("SXHKD_WIN_HEIGHT", itoa(height), 1);
 	//printf("%s, %s, %s, %d, %d, %d, %d\n", get_window_name(d, w), class->res_name, class->res_class, x, y, width, height);
 
 
