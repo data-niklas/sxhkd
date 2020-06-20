@@ -150,7 +150,12 @@ void get_window_bounds(Display *d, Window w, int *x, int *y, unsigned int *width
 char* itoa(int val){
 	
 	static char buf[32] = {0};
-	
+
+	if (val == 0){
+		buf[0] = '0';
+		return &buf[0];
+	}
+
 	int i = 30;
 	
 	for(; val && i ; --i, val /= 10)
@@ -184,6 +189,8 @@ void run(char *command, bool sync)
 	setenv("SXHKD_Y", itoa(y), 1);
 	setenv("SXHKD_WIDTH", itoa(width), 1);
 	setenv("SXHKD_HEIGHT", itoa(height), 1);
+	//printf("%s, %s, %s, %d, %d, %d, %d\n", get_window_name(d, w), class->res_name, class->res_class, x, y, width, height);
+
 
 	char *cmd[] = {shell, "-c", command, NULL};
 	spawn(cmd, sync);
